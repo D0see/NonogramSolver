@@ -43,32 +43,23 @@ function getArrangements(
     return arrangements;
 }
 
-function insertArrangementIntoCol(grid, x, arrangement) {
+function arrangementFitsRow(grid, arrangement, colIndex, rowIndex) {
 
-    for (const [index, state] of arrangement.entries()) {
-        grid[index][x] = state;
-    } 
-
-    return grid;
+    return arrangement[rowIndex] === grid[rowIndex][colIndex];
 }
 
-function arrangementFitsCol(grid, arrangement, y, colIndex) {
-
-    return arrangement[colIndex] === grid[y][colIndex];
-}
-
-function filterPossibleRowsArrangements(rowsArrangements, nextGrid, colIndex){
-    const possibleRowsArrangements = [];
+function filterPossibleColsArrangements(colsArrangement, nextGrid, rowIndex){
+    const possibleColsArrangements = [];
     
-    for (const [rowIndex, currRowArrangements] of rowsArrangements.entries()) {
-        possibleRowsArrangements.push(
-            currRowArrangements.filter(
-                currRowArrangement => arrangementFitsCol(nextGrid, currRowArrangement, rowIndex, colIndex)
+    for (const [colIndex, currColsArrangements] of colsArrangement.entries()) {
+        possibleColsArrangements.push(
+            currColsArrangements.filter(
+                currColArrangement => arrangementFitsRow(nextGrid, currColArrangement, colIndex, rowIndex)
             )
         );
     }
 
-    return possibleRowsArrangements;
+    return possibleColsArrangements;
 }
 
 function recursiveSolver(
@@ -76,38 +67,36 @@ function recursiveSolver(
     columnsArrangements, 
     rowIndex = 0, 
     colIndex = 0, 
-    currGrid = new Array(rowsArrangements.length).fill((new Array(columnsArrangements.length).fill(false))), 
+    currGrid = [], 
     finalGrid = [false]
 ) {
 
     if (finalGrid[0]) return finalGrid[0];
 
-    for (let x = colIndex; x < columnsArrangements.length; x++) {
-        const arrangements = columnsArrangements[x];
+    for (let y = rowIndex; y < rowsArrangements.length; y++) {
+        const arrangements = rowsArrangements[y];
 
-        for (const colArrangement of arrangements) {
+        for (const rowArrangement of arrangements) {
 
-            //todo instead of copying the grid, just pass a ref of the rows and test the columns instead (massive perf gain)
-            const nextGrid = insertArrangementIntoCol(JSON.parse(JSON.stringify(currGrid)), x, colArrangement);
+            const nextGrid = [...currGrid, rowArrangement];
 
-            //here we filter the rowsArrangement for ones that fits the currentcolumn arrangement
-            const possibleRowsArrangements = filterPossibleRowsArrangements(rowsArrangements, nextGrid, colIndex);
+            const possibleColsArrangements = filterPossibleColsArrangements(columnsArrangements, nextGrid, rowIndex);
 
-            //then we check that every rowsArrangements array holds at least arrangement and if so we continue the solve
-            if (possibleRowsArrangements.some(arrangements => arrangements.length === 0)) continue;
+            //we check that every colsArrangement array holds at least arrangement and if so we continue the solve this branch
+            if (possibleColsArrangements.some(arrangements => arrangements.length === 0)) continue;
 
-            //if this was the last column, return the grid
-            if (colIndex === columnsArrangements.length - 1) {
+            //if this was the last row, return the grid (ends the solve)
+            if (rowIndex === rowArrangement.length - 1) {
                 finalGrid[0] = nextGrid;
 
                 return finalGrid[0];
             }
 
             recursiveSolver(
-                possibleRowsArrangements,
-                columnsArrangements, 
-                rowIndex, 
-                colIndex + 1, 
+                rowsArrangements,
+                possibleColsArrangements, 
+                rowIndex + 1, 
+                colIndex, 
                 nextGrid,
                 finalGrid
             );

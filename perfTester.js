@@ -1,9 +1,8 @@
-import { solveNonogram as solveNonogram1 } from './solverv1.js';
-import { solveNonogram as solveNonogram2 } from './solverv2.js';
-import { solveNonogram as solveNonogram3 } from './solverv3.js';
+import { solveNonogram } from './solverv4.js';
 
-console.time(1);
-console.log(solveNonogram1(
+console.time('easy');
+
+console.log(solveNonogram(
         [
             [1],
             [4],
@@ -20,92 +19,60 @@ console.log(solveNonogram1(
         ]
     )
 );
-console.timeEnd(1);
+console.timeEnd('easy');
 
-console.time(2);
-console.log(solveNonogram2(
+console.time('medium');
+
+console.log(solveNonogram(
         [
-            [1],
-            [4],
-            [3, 1],
-            [2, 1],
-            [2]
+            [1, 1],
+            [1 ,1],
+            [1, 1],
+            [1, 1],
+            [1, 1],
+            [1, 2],
         ], 
         [
-            [1, 2],
-            [3],
-            [2, 1],
             [1, 1],
-            [3],
+            [1, 1],
+            [1, 1],
+            [1, 1],
+            [1, 1],
+            [2, 1]
         ]
     )
 );
-console.timeEnd(2);
+console.timeEnd('medium');
 
-console.time(3);
-console.log(solveNonogram3(
+console.time('hard')
+
+console.log(solveNonogram(
         [
-            [1],
-            [4],
-            [3, 1],
-            [2, 1],
-            [2]
+            [1, 1],
+            [1 ,1],
+            [1, 1],
+            [1, 1],
+            [1, 1],
+            [1, 2],
+            [1, 1],
+            [1, 1],
+            [1, 1],
+            [1, 1]
         ], 
         [
-            [1, 2],
-            [3],
+            [1, 1],
+            [1, 1],
+            [1, 1],
+            [1, 1],
+            [1, 1],
             [2, 1],
             [1, 1],
-            [3],
+            [1, 1],
+            [1, 1],
+            [1, 1]
         ]
     )
 );
-console.timeEnd(3);
 
-// console.log(solveNonogram(
-//         [
-//             [1, 1],
-//             [1 ,1],
-//             [1, 1],
-//             [1, 1],
-//             [1, 1],
-//             [1, 2],
-//         ], 
-//         [
-//             [1, 1],
-//             [1, 1],
-//             [1, 1],
-//             [1, 1],
-//             [1, 1],
-//             [2, 1]
-//         ]
-//     )
-// );
+console.timeEnd('hard')
 
-// console.log(solveNonogram(
-//         [
-//             [1, 1],
-//             [1 ,1],
-//             [1, 1],
-//             [1, 1],
-//             [1, 1],
-//             [1, 2],
-//             [1, 1],
-//             [1, 1],
-//             [1, 1],
-//             [1, 1]
-//         ], 
-//         [
-//             [1, 1],
-//             [1, 1],
-//             [1, 1],
-//             [1, 1],
-//             [1, 1],
-//             [2, 1],
-//             [1, 1],
-//             [1, 1],
-//             [1, 1],
-//             [1, 1]
-//         ]
-//     )
-// );
