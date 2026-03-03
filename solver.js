@@ -1,65 +1,60 @@
 function getArrangements(
-    blockSizes, 
-    lineLength, 
-    gaps = lineLength - blockSizes.reduce((acc, val) => acc + val, 0), 
-    inputArrIndex = 0, 
+    numberArr, 
+    totalLength, 
+    numOfGaps = totalLength - numberArr.reduce((acc, val) => acc + val, 0), 
+    numberArrIndex = 0, 
     currArrangement = [], 
-    arrangements = []
+    result = []
 ) {
 
     // if we are at the end of an arrangement and no gaps are left, we return the arrangement
-    if (inputArrIndex === blockSizes.length && gaps === 0) {
-        arrangements.push(currArrangement);
-        return arrangements;
+    if (numberArrIndex === numberArr.length && numOfGaps === 0) {
+        result.push(currArrangement);
+        return result;
     }
 
     if (
         // if we have at least one block to place
-        inputArrIndex < blockSizes.length && 
+        numberArrIndex < numberArr.length && 
         // if this is the first block or the last element was an empty space
-        (inputArrIndex === 0 || currArrangement[currArrangement.length - 1] === false)
+        (numberArrIndex === 0 || currArrangement[currArrangement.length - 1] === false)
     ) {
         getArrangements(
-            blockSizes,
-            lineLength, 
-            gaps, 
-            inputArrIndex + 1,
-            [...currArrangement, ...(new Array(blockSizes[inputArrIndex])).fill(true)],
-            arrangements
+            numberArr,
+            totalLength, 
+            numOfGaps, 
+            numberArrIndex + 1,
+            [...currArrangement, ...(new Array(numberArr[numberArrIndex])).fill(true)],
+            result
         );
     }
 
-    if (gaps > 0) {
+    if (numOfGaps > 0) {
         getArrangements(
-            blockSizes,
-            lineLength, 
-            gaps - 1, 
-            inputArrIndex,
+            numberArr,
+            totalLength, 
+            numOfGaps - 1, 
+            numberArrIndex,
             [...currArrangement, false],
-            arrangements
+            result
         );
     }
 
-    return arrangements;
+    return result;
 }
 
-function arrangementFitsRow(grid, arrangement, colIndex, rowIndex) {
+function colArrangementFitsRow(grid, arrangement, colIndex, rowIndex) {
 
     return arrangement[rowIndex] === grid[rowIndex][colIndex];
 }
 
 function filterPossibleColsArrangements(colsArrangement, nextGrid, rowIndex){
-    const possibleColsArrangements = [];
-    
-    for (const [colIndex, currColsArrangements] of colsArrangement.entries()) {
-        possibleColsArrangements.push(
-            currColsArrangements.filter(
-                currColArrangement => arrangementFitsRow(nextGrid, currColArrangement, colIndex, rowIndex)
-            )
-        );
-    }
 
-    return possibleColsArrangements;
+    return colsArrangement.map((currColArrangements, colIndex) =>
+        currColArrangements.filter(
+            currColArrangement => colArrangementFitsRow(nextGrid, currColArrangement, colIndex, rowIndex)
+        )
+    );
 }
 
 function recursiveSolver(
@@ -74,9 +69,8 @@ function recursiveSolver(
     if (finalGrid[0]) return finalGrid[0];
 
     for (let y = rowIndex; y < rowsArrangements.length; y++) {
-        const arrangements = rowsArrangements[y];
 
-        for (const rowArrangement of arrangements) {
+        for (const rowArrangement of rowsArrangements[y]) {
 
             const nextGrid = [...currGrid, rowArrangement];
 
