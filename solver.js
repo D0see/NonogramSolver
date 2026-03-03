@@ -42,16 +42,16 @@ function getArrangements(
     return result;
 }
 
-function colArrangementFitsRow(grid, arrangement, colIndex, rowIndex) {
+function colArrangementFitsRow(rowArrangement, currColArrangement, colIndex, rowIndex) {
 
-    return arrangement[rowIndex] === grid[rowIndex][colIndex];
+    return currColArrangement[rowIndex] === rowArrangement[colIndex];
 }
 
-function filterPossibleColsArrangements(colsArrangement, nextGrid, rowIndex){
+function filterPossibleColsArrangements(colsArrangement, rowArrangement, rowIndex){
 
     return colsArrangement.map((currColArrangements, colIndex) =>
         currColArrangements.filter(
-            currColArrangement => colArrangementFitsRow(nextGrid, currColArrangement, colIndex, rowIndex)
+            currColArrangement => colArrangementFitsRow(rowArrangement, currColArrangement, colIndex, rowIndex)
         )
     );
 }
@@ -71,12 +71,12 @@ function recursiveSolver(
 
         for (const rowArrangement of rowsArrangements[y]) {
 
-            const nextGrid = [...currGrid, rowArrangement];
-
-            const possibleColsArrangements = filterPossibleColsArrangements(columnsArrangements, nextGrid, rowIndex);
-
-            //we check that every colsArrangement array holds at least arrangement and if so we continue the solve this branch
+            //we check that every colsArrangement array holds at least one possible arrangement and if so we continue to solve this branch
+            const possibleColsArrangements = filterPossibleColsArrangements(columnsArrangements, rowArrangement, rowIndex);
             if (possibleColsArrangements.some(arrangements => arrangements.length === 0)) continue;
+
+            //append a reference to current rowArrangement to the current grid to build the solution step by step
+            const nextGrid = [...currGrid, rowArrangement];
 
             //if this was the last row, return the grid (ends the solve)
             if (rowIndex === rowArrangement.length - 1) {
@@ -87,6 +87,7 @@ function recursiveSolver(
 
             recursiveSolver(
                 rowsArrangements,
+                //only pass the pruned columns arrangements to this branch of the solve
                 possibleColsArrangements, 
                 rowIndex + 1, 
                 colIndex, 
@@ -111,3 +112,5 @@ export function solveNonogram (
 
     return recursiveSolver(rowsArrangements, columnsArrangements);
 }
+
+//this might be improved further if i calculated the next arrangements as they are needed ? maybe build an iterator pattern thingy ?
