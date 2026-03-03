@@ -9,8 +9,7 @@ function getArrangements(
 
     // if we are at the end of an arrangement and no gaps are left, we return the arrangement
     if (numberArrIndex === numberArr.length && numOfGaps === 0) {
-        result.push(currArrangement);
-        return result;
+        return result.push(currArrangement);
     }
 
     if (
