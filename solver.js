@@ -142,3 +142,5 @@ export function solveNonogram (
 }
 
 //im kind of out of ideas, i think i might need to find a way to use memoization but i cant seem to find a way so far
+
+//might need a completely need approach, similar to solving by hand
