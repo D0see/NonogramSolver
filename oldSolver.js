@@ -42,39 +42,18 @@ function getArrangements(
     return result;
 }
 
-function currColArrangementFitsRow(currColArrangement, currColIndex, rowArrangement, rowIndex, currGrid) {
+function colArrangementFitsRow(rowArrangement, currColArrangement, colIndex, rowIndex) {
 
-    for (let y = 0; y < currGrid.length; y++) {
-        if (currColArrangement[y] !== currGrid[y][currColIndex]) return false;
-    }
-
-    if (currGrid.length && currColArrangement[rowIndex] !== rowArrangement[currColIndex]) return false;
-
-    return true;
+    return currColArrangement[rowIndex] === rowArrangement[colIndex];
 }
 
-function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangement, currGrid, rowIndex, columnsArrangementsIndexes) {
+function filterPossibleColsArrangements(colsArrangement, rowArrangement, rowIndex){
 
-    outerLoop: for (const [currColIndex, colArrangements] of colsArrangements.entries()) {
-        for (let i = columnsArrangementsIndexes[currColIndex]; i < colArrangements.length; i++) {
-            const currColArrangement = colArrangements[i];
-            if (currColArrangementFitsRow(
-                currColArrangement, 
-                currColIndex,
-                rowArrangement, 
-                rowIndex, 
-                currGrid)
-            ) {
-                columnsArrangementsIndexes[currColIndex] = i;
-                continue outerLoop;
-            } else if (i === colArrangements.length - 1) {
-                return false;
-            }
-        }
-    }
-
-    return columnsArrangementsIndexes;
-
+    return colsArrangement.map((currColArrangements, colIndex) =>
+        currColArrangements.filter(
+            currColArrangement => colArrangementFitsRow(rowArrangement, currColArrangement, colIndex, rowIndex)
+        )
+    );
 }
 
 function recursiveSolver(
@@ -83,7 +62,6 @@ function recursiveSolver(
     rowIndex = 0, 
     colIndex = 0, 
     currGrid = [], 
-    columnsArrangementsIndexes = new Array(columnsArrangements.length).fill(0),
     finalGrid = [false]
 ) {
 
@@ -93,15 +71,9 @@ function recursiveSolver(
 
         for (const rowArrangement of rowsArrangements[y]) {
 
-            const nextColumnsArrangementsIndexes = LoopThroughColumnsArrangementsUntilMatch(
-                columnsArrangements, 
-                rowArrangement, 
-                currGrid, 
-                rowIndex, 
-                [...columnsArrangementsIndexes]
-            );
-
-            if (!nextColumnsArrangementsIndexes) continue;
+            //we check that every colsArrangement array holds at least one possible arrangement and if so we continue to solve this branch
+            const possibleColsArrangements = filterPossibleColsArrangements(columnsArrangements, rowArrangement, rowIndex);
+            if (possibleColsArrangements.some(arrangements => arrangements.length === 0)) continue;
 
             //append a reference to current rowArrangement to the current grid to build the solution step by step
             const nextGrid = [...currGrid, rowArrangement];
@@ -115,11 +87,11 @@ function recursiveSolver(
 
             recursiveSolver(
                 rowsArrangements,
-                columnsArrangements, 
+                //only pass the pruned columns arrangements to this branch of the solve
+                possibleColsArrangements, 
                 rowIndex + 1, 
                 colIndex, 
                 nextGrid,
-                nextColumnsArrangementsIndexes,
                 finalGrid
             );
 
@@ -140,5 +112,3 @@ export function solveNonogram (
 
     return recursiveSolver(rowsArrangements, columnsArrangements);
 }
-
-//im kind of out of ideas, i think i might need to find a way to use memoization but i cant seem to find a way so far

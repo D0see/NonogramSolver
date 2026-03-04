@@ -1,16 +1,31 @@
 import { solveNonogram } from './solver.js';
+import { solveNonogram as oldSolver} from './oldSolver.js';
 import { buildTestGrid } from './generator.js';
 
-for (let i = 2; i < 20; i++) {
+for (let i = 10; i < 15; i++) {
     const [rows, columns] = buildTestGrid(i);
 
-    console.time('size ' + i);
+    console.time('new ' + i);
 
-    console.log(rows, columns)
-
-    console.log(
+    // console.log (
+    //     rows, columns
+    // );
+    // console.log (
         solveNonogram(rows, columns)
-    );
+    // );
 
-    console.timeEnd('size ' + i);
+    console.timeEnd('new ' + i);
+
+    // NEW VS OLD //
+    
+    console.time('old ' + i);
+    
+    // console.log (
+    //     rows, columns
+    // );
+    // console.log (
+        oldSolver(rows, columns)
+    // );
+
+    console.timeEnd('old ' + i);
 }
