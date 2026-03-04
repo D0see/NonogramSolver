@@ -114,7 +114,3 @@ export function solveNonogram (
 }
 
 //this might be improved further if i calculated the next arrangements as they are needed ? maybe build an iterator pattern thingy ?
-
-//instead of filtering the arrangements every pass i should just keep track of the first index that passes
-// for every arrangement and keep going from there, this is better except for the fact that ill be checking
-// every previous rows for each if the currently selected column doesnt pass instead of just the next one.
