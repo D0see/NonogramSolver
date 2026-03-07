@@ -133,9 +133,7 @@ function recursiveSolver(
 }
 
 //todo i could just store a map of true positions and check against that instead of storing the full grid
-//rework function to reuse grid building logic from generator.js
-
-//i could use this strategy until no further progress is made and then recursive brute force the rest
+//Todo clean this code
 function pruneRowsAndColumnsArrangements (
     rowsArrangements, 
     columnsArrangements
@@ -203,10 +201,26 @@ export function solveNonogram (
     const rowsArrangements = rows.map(row => getArrangements(row, columns.length));
     const columnsArrangements = columns.map(column => getArrangements(column, rows.length));
 
-    const [ prunedRowsArrangement, prunedColumnsArrangements ] = pruneRowsAndColumnsArrangements(
-        rowsArrangements, 
-        columnsArrangements
-    );
+    let numOfRowsArrangements = rowsArrangements.reduce((acc, val) => acc += val.length, 0);
+    let numOfColumnsArrangements = columnsArrangements.reduce((acc, val) => acc += val.length, 0);
+    let numOfPrunedRowsArrangements = -1;
+    let numOfPrunedColumnsArrangements = -1;
+
+    while (
+        numOfRowsArrangements !== numOfPrunedRowsArrangements 
+        && numOfColumnsArrangements !== numOfPrunedColumnsArrangements
+    ) {
+        numOfRowsArrangements = numOfPrunedRowsArrangements;
+        numOfColumnsArrangements = numOfPrunedColumnsArrangements;
+
+        const [ prunedRowsArrangement, prunedColumnsArrangements ] = pruneRowsAndColumnsArrangements(
+            rowsArrangements, 
+            columnsArrangements
+        );
+
+        numOfPrunedRowsArrangements = prunedRowsArrangement.reduce((acc, val) => acc += val.length, 0);
+        numOfPrunedColumnsArrangements = prunedColumnsArrangements.reduce((acc, val) => acc += val.length, 0);
+    }
 
     return recursiveSolver(rowsArrangements, columnsArrangements);
 }
@@ -228,6 +242,7 @@ export function solveNonogram (
 //     ]
 // )
 
-//im kind of out of ideas, i think i might need to find a way to use memoization but i cant seem to find a way so far
 
-//pre-solve the grid with blocks that are present in every row permutations and prune columns against that ?
+//the sub-problems are obviously the smaller grid...
+//start with the top-left 2x2
+//save all possible solution and progress further down-right
