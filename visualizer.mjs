@@ -8,6 +8,8 @@ import { delay } from './utils.mjs'
 const container = document.getElementById(HTMLElementIdEnum.GRID);
 const rowsInfos = document.getElementById(HTMLElementIdEnum.ROWS_INFOS);
 const columnsInfos = document.getElementById(HTMLElementIdEnum.COLUMNS_INFOS);
+const rowsPermutationsInfos = document.getElementById(HTMLElementIdEnum.ROWS_PERMUTATIONS_INFOS);
+const columnsPermutationsInfos = document.getElementById(HTMLElementIdEnum.COLUMNS_PERMUTATIONS_INFOS);
 
 async function generateVisualization(
     columns, 
@@ -34,6 +36,24 @@ async function generateVisualization(
         const currRowInfos = document.createElement(DomElementNameEnum.ROW_INFO);
         currRowInfos.innerText = row.join(' ');
         rowsInfos.appendChild(currRowInfos);
+    }
+
+    //reset rows permutations infos
+    rowsPermutationsInfos.innerHTML = "";
+    rowsPermutationsInfos.style.gridTemplateRows = 'repeat(' + rows.length + ', 1fr)';
+
+    for (const row of rows) {
+        const rowPermutationsInfos = document.createElement(DomElementNameEnum.ROW_PERMUTATIONS_INFOS);
+        rowsPermutationsInfos.appendChild(rowPermutationsInfos);
+    }
+
+    //reset columns permutations infos
+    columnsPermutationsInfos.innerHTML = "";
+    columnsPermutationsInfos.style.gridTemplateColumns = 'repeat(' + columns.length + ', 1fr)';
+
+    for (const column of columns) {
+        const columnPermutationsInfos = document.createElement(DomElementNameEnum.COLUMN_PERMUTATIONS_INFOS);
+        columnsPermutationsInfos.appendChild(columnPermutationsInfos);
     }
 
     //generate columns infos
@@ -65,7 +85,7 @@ export async function updateConcreteGrid({
         concreteGrid = concreteGrid,
         grid = [], 
         color = DomElementColorsEnum.ACTIVATED_BLOCK, 
-        delayMs = 500,
+        delayMs = 100,
         activateBlock = true,
         finishGrid =  false
     }) 
@@ -93,4 +113,23 @@ export async function updateConcreteGrid({
     await delay(delayMs);
 }
 
-await generateVisualization(...buildTestGrid(10), container, nonogramSolver3VisualEdition);
+//todo change permuation wording to arrangement to fit what i previously named it elsewhere
+export async function updateRowsPermutationsInfos(rowsPermutations, rowPermutationIndex = 0, y = 0) 
+{
+    rowsPermutationsInfos.childNodes[y].innerText = rowsPermutations[y].length - rowPermutationIndex;
+
+    y++;
+
+    for (y; y < rowsPermutations.length; y++) {
+        rowsPermutationsInfos.childNodes[y].innerText = rowsPermutations[y].length;
+    }
+}
+
+export async function updateColumnsPermutationsInfos(columnsPermutations, indexesOffset = new Array(columnsPermutations.length).fill(0)) 
+{
+    for (let i = 0; i < columnsPermutations.length; i++) {
+        columnsPermutationsInfos.childNodes[i].innerText = `${columnsPermutations[i].length - indexesOffset[i]}`.split('').join('\n');
+    }
+}
+
+await generateVisualization(...buildTestGrid(15), container, nonogramSolver3VisualEdition);

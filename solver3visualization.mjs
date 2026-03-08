@@ -1,5 +1,5 @@
 import { generateGrid } from "./generator.mjs";
-import { updateConcreteGrid } from "./visualizer.mjs";
+import { updateConcreteGrid, updateRowsPermutationsInfos, updateColumnsPermutationsInfos } from "./visualizer.mjs";
 import { DomElementColorsEnum } from "./DomElementColorsEnum.mjs";
 
 function getArrangements(
@@ -96,7 +96,7 @@ async function recursiveSolver(
 
     for (let y = rowIndex; y < rowsArrangements.length; y++) {
 
-        for (const rowArrangement of rowsArrangements[y]) {
+        for (const [rowArrangementIndex, rowArrangement] of rowsArrangements[y].entries()) {
 
             const nextColumnsArrangementsIndexes = LoopThroughColumnsArrangementsUntilMatch(
                 columnsArrangements, 
@@ -105,6 +105,8 @@ async function recursiveSolver(
                 rowIndex, 
                 [...columnsArrangementsIndexes]
             );
+
+            await updateRowsPermutationsInfos(rowsArrangements, rowArrangementIndex, y);
 
             if (!nextColumnsArrangementsIndexes) continue;
 
@@ -115,10 +117,10 @@ async function recursiveSolver(
                 concreteGrid : concreteGrid,
                 grid : nextGrid, 
                 color : DomElementColorsEnum.ACTIVATED_BLOCK, 
-                delayMs : 15,
                 activateBlock : false,
             });
-            
+
+            await updateColumnsPermutationsInfos(columnsArrangements, nextColumnsArrangementsIndexes);
 
             //if this was the last row, return the grid (ends the solve)
             if (rowIndex === rowArrangement.length - 1) {
@@ -171,7 +173,6 @@ async function filterRowsAndColumnsAgainstEachother (
         concreteGrid : concreteGrid,
         grid : grid, 
         color : DomElementColorsEnum.ROW_PRUNED_BLOCK, 
-        delayMs : 15,
         activateBlock : true,
     });
 
@@ -185,8 +186,6 @@ async function filterRowsAndColumnsAgainstEachother (
         });
     }
 
-
-    //updateNumberOfColumnsArrangements(columnsArrangements.length)
 
     grid = generateGrid(
         rowsArrangements.length, 
@@ -207,7 +206,6 @@ async function filterRowsAndColumnsAgainstEachother (
         concreteGrid : concreteGrid,
         grid : grid, 
         color : DomElementColorsEnum.COLUMN_PRUNED_BLOCK, 
-        delayMs : 15,
         activateBlock : true,
     });
 
@@ -220,8 +218,6 @@ async function filterRowsAndColumnsAgainstEachother (
             return true;
         });
     }
-
-    //updateNumberOfRowsArrangements(columnsArrangements.length)
 
     return [ rowsArrangements, columnsArrangements, grid ]
 }
@@ -269,6 +265,9 @@ export async function solveNonogram (
 
     let rowsArrangements = rows.map(row => getArrangements(row, columns.length));
     let columnsArrangements = columns.map(column => getArrangements(column, rows.length));
+
+    await updateRowsPermutationsInfos(rowsArrangements);
+    await updateColumnsPermutationsInfos(columnsArrangements);
 
     [rowsArrangements, columnsArrangements] = await prune(
         rowsArrangements, 

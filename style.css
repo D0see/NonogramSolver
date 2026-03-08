@@ -3,12 +3,18 @@ body {
     width: 95vw;
 }
 
+.blank-square-space {
+    height: 150px;
+    width: 150px;
+}
+
 #top-outer-container {
     display: flex;
     flex-direction: row;
     width: fit-content;
     align-items: center;
     margin: 0 auto; 
+
 }
 
 #general-infos {
@@ -23,7 +29,7 @@ body {
     display: grid;
 }
 
-#bottom-outer-container {
+#middle-outer-container {
     display: flex;
     flex-direction: row;
     width: fit-content;
@@ -42,7 +48,26 @@ body {
     width: 450px;
     height: 450px;
     display: grid;
+}
 
+#rows-permutations-infos {
+    height: 450px;
+    width: 150px;
+    display: grid;
+}
+
+#bottom-outer-container {
+    display: flex;
+    flex-direction: row;
+    width: fit-content;
+    align-items: center;
+    margin: 0 auto; 
+}
+
+#columns-permutations-infos {
+    height: 150px;
+    width: 450px;
+    display: grid;
 }
 
 /** TEST */
@@ -57,4 +82,16 @@ columnInfo {
     text-align: center;
     height: fit-content;
     align-self: self-end;
+}
+
+rowpermutationsinfos {
+    margin-left: 3px;
+    align-self: center;
+    text-align: left;
+}
+
+columnPermutationsInfos {
+    text-align: center;
+    height: fit-content;
+    align-self: self-start;
 }
