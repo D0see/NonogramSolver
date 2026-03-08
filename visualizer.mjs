@@ -1,4 +1,4 @@
-import { generateGrid } from "./generator.mjs";
+import { generateGrid, buildTestGrid } from "./generator.mjs";
 import { DomElementNameEnum } from './DomElementNameEnum.mjs';
 import { DomElementColorsEnum } from "./DomElementColorsEnum.mjs";
 import { solveNonogram } from './solver3visualization.mjs';
@@ -6,7 +6,7 @@ import { delay } from './utils.mjs'
 
 const container = document.getElementById(DomElementNameEnum.GRID);
 
-function generateVisualization(
+async function generateVisualization(
     columns, 
     rows,
     container,
@@ -32,7 +32,13 @@ function generateVisualization(
 
     });
 
-    solverFn(rows, columns, concreteGrid);
+    await solverFn(rows, columns, concreteGrid);
+
+    await updateConcreteGrid(
+        concreteGrid,
+        undefined, undefined, undefined, undefined,
+        true
+    )
 
     return concreteGrid;
 
@@ -40,22 +46,27 @@ function generateVisualization(
 
 export async function updateConcreteGrid(
     concreteGrid,
-    grid, 
+    grid = [], 
     color = DomElementColorsEnum.ACTIVATED_BLOCK, 
     delayMs = 500,
-    activateBlock = true
+    activateBlock = true,
+    finishGrid = false
 ) {
     for (let y = 0; y < concreteGrid.length; y++) {
         for (let x = 0; x < concreteGrid[0].length; x++) {
             const currConcreteBlock = concreteGrid[y][x];
             const currBlock = grid?.[y]?.[x];
 
-            if (currBlock && !currConcreteBlock.activated) {
+            if (finishGrid && currConcreteBlock.style.backgroundColor !== DomElementColorsEnum.BASE_BLOCK) {
+                currConcreteBlock.style.backgroundColor = DomElementColorsEnum.FINAL_COLOR;
+            }
+
+            else if (currBlock && !currConcreteBlock.activated) {
                 currConcreteBlock.style.backgroundColor = color;
                 if (activateBlock) currConcreteBlock.activated = true;
             }
 
-            if (!activateBlock && !currBlock && !currConcreteBlock.activated) {
+            else if (!activateBlock && !currBlock && !currConcreteBlock.activated) {
                 currConcreteBlock.style.backgroundColor = DomElementColorsEnum.BASE_BLOCK;
             }
         }
@@ -64,43 +75,4 @@ export async function updateConcreteGrid(
     await delay(delayMs);
 }
 
-// generateVisualization(
-//     [
-//         [ 1, 4, 1 ], [ 2, 4 ],      
-//         [ 2, 2, 2 ], [ 1, 1, 3 ],   
-//         [ 4 ],       [ 1, 1, 3 ],   
-//         [ 3, 1 ],    [ 2, 1, 1 ],   
-//         [ 1, 3, 1 ], [ 1, 3, 2 ]    
-//     ],
-//     [
-//         [ 2, 1, 3 ],    [ 3, 2 ],   
-//         [ 1, 1, 2 ],    [ 1, 1, 2 ],
-//         [ 1, 1, 1, 3 ], [ 1, 1, 1 ],
-//         [ 5 ],          [ 1, 3, 1 ],
-//         [ 6, 2 ],       [ 2, 2, 1 ] 
-//     ],
-//     container, 
-//     solveNonogram
-// );
-
-generateVisualization(
-[
-    [ 1, 3, 2 ],       [ 1, 2 ],
-    [ 3, 1, 4, 1 ],    [ 4, 3, 1 ],
-    [ 1, 1, 1, 2, 1 ], [ 2, 7, 1 ],
-    [ 1, 2, 1, 5 ],    [ 2, 8 ],
-    [ 1, 2 ],          [ 4, 1, 2, 1 ],
-    [ 1, 3, 1, 3 ],    [ 1, 2, 1, 3 ],
-    [ 3, 1, 2, 1 ],    [ 4, 1, 3 ]
-], [
-    [ 1, 3, 2 ],       [ 2, 1, 1, 2, 2 ],
-    [ 1, 1, 1, 2, 3 ], [ 1, 3, 1 ],
-    [ 1, 2, 2 ],       [ 1, 4, 2 ],
-    [ 1, 1, 3, 1 ],    [ 1, 7 ],
-    [ 1, 1, 1, 1, 3 ], [ 1, 2, 3, 1, 1 ],
-    [ 6, 3 ],          [ 2, 5, 1, 2 ],
-    [ 2, 2, 1, 1 ],    [ 6, 2, 1 ]
-    ],
-container, 
-solveNonogram
-);
+await generateVisualization(...buildTestGrid(10), container, solveNonogram);

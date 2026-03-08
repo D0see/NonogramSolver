@@ -7,5 +7,6 @@ export const DomElementColorsEnum = Object.freeze({
   BASE_BLOCK: 'grey',
   ROW_PRUNED_BLOCK: 'blue',
   COLUMN_PRUNED_BLOCK: 'purple',
-  ROW_PRUNED_BOTH: 'yellow'
+  FINAL_COLOR: 'yellow',
+ 
 });

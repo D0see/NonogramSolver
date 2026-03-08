@@ -9,6 +9,4 @@ body {
     margin: 0 auto;
     border: 1px solid red;
     display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    grid-template-rows: repeat(10, 1fr);
 }
