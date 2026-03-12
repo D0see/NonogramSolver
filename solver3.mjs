@@ -79,21 +79,21 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
 
 }
 
-function recursiveSolver(
+ function recursiveSolver(
     rowsArrangements, 
     columnsArrangements, 
     rowIndex = 0, 
     colIndex = 0, 
     currGrid = [], 
     columnsArrangementsIndexes = new Array(columnsArrangements.length).fill(0),
-    finalGrid = [false]
+    finalGrid = [false],
 ) {
 
     if (finalGrid[0]) return finalGrid[0];
 
     for (let y = rowIndex; y < rowsArrangements.length; y++) {
 
-        for (const rowArrangement of rowsArrangements[y]) {
+        for (const [rowArrangementIndex, rowArrangement] of rowsArrangements[y].entries()) {
 
             const nextColumnsArrangementsIndexes = LoopThroughColumnsArrangementsUntilMatch(
                 columnsArrangements, 
@@ -115,14 +115,14 @@ function recursiveSolver(
                 return finalGrid[0];
             }
 
-            recursiveSolver(
+             recursiveSolver(
                 rowsArrangements,
                 columnsArrangements, 
                 rowIndex + 1, 
                 colIndex, 
                 nextGrid,
                 nextColumnsArrangementsIndexes,
-                finalGrid
+                finalGrid,
             );
 
             if (finalGrid[0]) return finalGrid[0];
@@ -133,10 +133,9 @@ function recursiveSolver(
 }
 
 //todo i could just store a map of true positions and check against that instead of storing the full grid
-//Todo clean this code
-function pruneRowsAndColumnsArrangements (
+ function filterRowsAndColumnsAgainstEachother (
     rowsArrangements, 
-    columnsArrangements
+    columnsArrangements,
 ) {
 
     let grid = generateGrid(
@@ -174,7 +173,6 @@ function pruneRowsAndColumnsArrangements (
     }
 
     //prune rows
-
     for (const [y, rowArrangements] of rowsArrangements.entries()) {
         rowsArrangements[y] = rowArrangements.filter(function (rowArrangement) {
             for (let x = 0; x < rowArrangement.length; x++) {
@@ -184,16 +182,13 @@ function pruneRowsAndColumnsArrangements (
         });
     }
 
-    return [ rowsArrangements, columnsArrangements ]
+    return [ rowsArrangements, columnsArrangements, grid ]
 }
 
-export function solveNonogram (
-    rows,
-    columns
+ function prune(
+    rowsArrangements,
+    columnsArrangements
 ) {
-
-    let rowsArrangements = rows.map(row => getArrangements(row, columns.length));
-    let columnsArrangements = columns.map(column => getArrangements(column, rows.length));
 
     let numOfRowsArrangements = rowsArrangements.reduce((acc, val) => acc += val.length, 0);
     let numOfColumnsArrangements = columnsArrangements.reduce((acc, val) => acc += val.length, 0);
@@ -208,17 +203,33 @@ export function solveNonogram (
         numOfRowsArrangements = numOfPrunedRowsArrangements;
         numOfColumnsArrangements = numOfPrunedColumnsArrangements;
 
-        const [ prunedRowsArrangement, prunedColumnsArrangements ] = pruneRowsAndColumnsArrangements(
+        let prunedRowsArrangement, prunedColumnsArrangements;
+        [prunedRowsArrangement, prunedColumnsArrangements] =  filterRowsAndColumnsAgainstEachother(
             rowsArrangements, 
             columnsArrangements
         );
 
         numOfPrunedRowsArrangements = prunedRowsArrangement.reduce((acc, val) => acc += val.length, 0);
         numOfPrunedColumnsArrangements = prunedColumnsArrangements.reduce((acc, val) => acc += val.length, 0);
-
         rowsArrangements = prunedRowsArrangement;
         columnsArrangements = prunedColumnsArrangements;
     }
+
+    return [rowsArrangements, columnsArrangements];
+}
+
+export function solveNonogram (
+    rows,
+    columns
+) {
+
+    let rowsArrangements = rows.map(row => getArrangements(row, columns.length));
+    let columnsArrangements = columns.map(column => getArrangements(column, rows.length));
+
+    [rowsArrangements, columnsArrangements] = prune(
+        rowsArrangements, 
+        columnsArrangements
+    );
 
     return recursiveSolver(rowsArrangements, columnsArrangements);
 }

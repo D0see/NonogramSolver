@@ -1,4 +1,6 @@
 import { generateGrid } from "./generator.mjs";
+import { updateConcreteGrid, updateRowsPermutationsInfos, updateColumnsPermutationsInfos } from "./visualizer.mjs";
+import { DomElementColorsEnum } from "./DomElementColorsEnum.mjs";
 
 function getArrangements(
     numberArr, 
@@ -46,12 +48,11 @@ function getArrangements(
 
 function currColArrangementFitsRow(currColArrangement, currColIndex, rowArrangement, rowIndex, currGrid) {
 
-    for (const y in currGrid) {
-        const rowArrangement = currGrid[y];
-        if (currColArrangement[y] !== rowArrangement[currColIndex]) return false;
+    for (let y = 0; y < currGrid.length; y++) {
+        if (currColArrangement[y] !== currGrid[y][currColIndex]) return false;
     }
 
-    if (rowIndex > 1 && currColArrangement[rowIndex] !== rowArrangement[currColIndex]) return false;
+    if (currGrid.length && currColArrangement[rowIndex] !== rowArrangement[currColIndex]) return false;
 
     return true;
 }
@@ -80,25 +81,23 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
 
 }
 
- function recursiveSolver(
-    rowsArrangementsSorted, 
+async function recursiveSolver(
+    rowsArrangements, 
     columnsArrangements, 
-    currRowsArrsIndex = 0, 
-    currGrid = {}, 
+    concreteGrid,
+    rowIndex = 0, 
+    colIndex = 0, 
+    currGrid = [], 
     columnsArrangementsIndexes = new Array(columnsArrangements.length).fill(0),
     finalGrid = [false],
 ) {
 
     if (finalGrid[0]) return finalGrid[0];
 
-    for (currRowsArrsIndex; currRowsArrsIndex < rowsArrangementsSorted.length; currRowsArrsIndex++) {
+    for (let y = rowIndex; y < rowsArrangements.length; y++) {
 
-        const rowIndex = rowsArrangementsSorted[currRowsArrsIndex].y;
-        const rowArrangements = rowsArrangementsSorted[currRowsArrsIndex].arrangements;
+        for (const [rowArrangementIndex, rowArrangement] of rowsArrangements[y].entries()) {
 
-        for (const rowArrangement of rowArrangements) {
-
-            //todo update this func
             const nextColumnsArrangementsIndexes = LoopThroughColumnsArrangementsUntilMatch(
                 columnsArrangements, 
                 rowArrangement, 
@@ -107,25 +106,35 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
                 [...columnsArrangementsIndexes]
             );
 
+            await updateRowsPermutationsInfos(rowsArrangements, rowArrangementIndex, y);
+
             if (!nextColumnsArrangementsIndexes) continue;
 
-            const nextGrid = 
-            {
-                ...currGrid, 
-                [`${rowIndex}`]: rowArrangement
-            };
+            //append a reference to current rowArrangement to the current grid to build the solution step by step
+            const nextGrid = [...currGrid, rowArrangement];
+
+            await updateConcreteGrid({
+                concreteGrid : concreteGrid,
+                grid : nextGrid, 
+                color : DomElementColorsEnum.ACTIVATED_BLOCK, 
+                activateBlock : false,
+            });
+
+            await updateColumnsPermutationsInfos(columnsArrangements, nextColumnsArrangementsIndexes);
 
             //if this was the last row, return the grid (ends the solve)
-            if (rowIndex === rowsArrangementsSorted.length - 1) {
+            if (rowIndex === rowArrangement.length - 1) {
                 finalGrid[0] = nextGrid;
 
                 return finalGrid[0];
             }
 
-             recursiveSolver(
-                rowsArrangementsSorted,
+            await recursiveSolver(
+                rowsArrangements,
                 columnsArrangements, 
-                currRowsArrsIndex + 1, 
+                concreteGrid,
+                rowIndex + 1, 
+                colIndex, 
                 nextGrid,
                 nextColumnsArrangementsIndexes,
                 finalGrid,
@@ -139,9 +148,10 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
 }
 
 //todo i could just store a map of true positions and check against that instead of storing the full grid
- function filterRowsAndColumnsAgainstEachother (
+async function filterRowsAndColumnsAgainstEachother (
     rowsArrangements, 
     columnsArrangements,
+    concreteGrid
 ) {
 
     let grid = generateGrid(
@@ -159,6 +169,13 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
         }
     }
 
+    await updateConcreteGrid({
+        concreteGrid : concreteGrid,
+        grid : grid, 
+        color : DomElementColorsEnum.ROW_PRUNED_BLOCK, 
+        activateBlock : true,
+    });
+
     //prune columns
     for (const [x, columnArrangements] of columnsArrangements.entries()) {
         columnsArrangements[x] = columnArrangements.filter(function (columnArrangement) {
@@ -169,6 +186,13 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
         });
     }
 
+
+    grid = generateGrid(
+        rowsArrangements.length, 
+        columnsArrangements.length, 
+        () => true
+    );
+
     //fill the grid with true present for all possible column arrangements
     for (const [x, columnArrangements] of columnsArrangements.entries()) {
         for (const columnArrangement of columnArrangements) {
@@ -177,6 +201,13 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
             }
         }
     }
+
+    await updateConcreteGrid({
+        concreteGrid : concreteGrid,
+        grid : grid, 
+        color : DomElementColorsEnum.COLUMN_PRUNED_BLOCK, 
+        activateBlock : true,
+    });
 
     //prune rows
     for (const [y, rowArrangements] of rowsArrangements.entries()) {
@@ -191,9 +222,10 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
     return [ rowsArrangements, columnsArrangements, grid ]
 }
 
- function prune(
+async function prune(
     rowsArrangements,
-    columnsArrangements
+    columnsArrangements,
+    concreteGrid
 ) {
 
     let numOfRowsArrangements = rowsArrangements.reduce((acc, val) => acc += val.length, 0);
@@ -210,9 +242,10 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
         numOfColumnsArrangements = numOfPrunedColumnsArrangements;
 
         let prunedRowsArrangement, prunedColumnsArrangements;
-        [prunedRowsArrangement, prunedColumnsArrangements] =  filterRowsAndColumnsAgainstEachother(
+        [prunedRowsArrangement, prunedColumnsArrangements] = await filterRowsAndColumnsAgainstEachother(
             rowsArrangements, 
-            columnsArrangements
+            columnsArrangements,
+            concreteGrid
         );
 
         numOfPrunedRowsArrangements = prunedRowsArrangement.reduce((acc, val) => acc += val.length, 0);
@@ -221,38 +254,26 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
         columnsArrangements = prunedColumnsArrangements;
     }
 
-    return [rowsArrangements, columnsArrangements];
+    return [rowsArrangements, columnsArrangements, grid];
 }
 
-function sortBasedOnNumberOfElementsWhileSavingOriginalIndex(rowsArrangements) {
-    return rowsArrangements.map(function (rowArrangements, index) {
-        return {
-            y: index,
-            arrangements: rowArrangements
-        }
-    }).toSorted((a, b) => a.arrangements.length - b.arrangements.length);
-}
-
-export function solveNonogram (
+export async function solveNonogram (
     rows,
-    columns
+    columns, 
+    concreteGrid
 ) {
 
     let rowsArrangements = rows.map(row => getArrangements(row, columns.length));
     let columnsArrangements = columns.map(column => getArrangements(column, rows.length));
 
-    [rowsArrangements, columnsArrangements] = prune(
+    await updateRowsPermutationsInfos(rowsArrangements);
+    await updateColumnsPermutationsInfos(columnsArrangements);
+
+    [rowsArrangements, columnsArrangements] = await prune(
         rowsArrangements, 
-        columnsArrangements
+        columnsArrangements,
+        concreteGrid
     );
 
-    const rowsArrangementsSortedBasedOnNumberOfPermutations = sortBasedOnNumberOfElementsWhileSavingOriginalIndex(
-        rowsArrangements
-    );
-
-    return recursiveSolver(rowsArrangementsSortedBasedOnNumberOfPermutations, columnsArrangements);
+    return await recursiveSolver(rowsArrangements, columnsArrangements, concreteGrid);
 }
-
-
-//the idea for this one is to sort the column based on number of permutations and start to solve
-//from fewer perms rows to higher number of perms rows

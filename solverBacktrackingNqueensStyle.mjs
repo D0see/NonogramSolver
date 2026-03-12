@@ -46,12 +46,11 @@ function getArrangements(
 
 function currColArrangementFitsRow(currColArrangement, currColIndex, rowArrangement, rowIndex, currGrid) {
 
-    for (const y in currGrid) {
-        const rowArrangement = currGrid[y];
-        if (currColArrangement[y] !== rowArrangement[currColIndex]) return false;
+    for (let y = 0; y < currGrid.length; y++) {
+        if (currColArrangement[y] !== currGrid[y][currColIndex]) return false;
     }
 
-    if (rowIndex > 1 && currColArrangement[rowIndex] !== rowArrangement[currColIndex]) return false;
+    if (currGrid.length && currColArrangement[rowIndex] !== rowArrangement[currColIndex]) return false;
 
     return true;
 }
@@ -80,25 +79,22 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
 
 }
 
- function recursiveSolver(
-    rowsArrangementsSorted, 
+function recursiveSolver(
+    rowsArrangements, 
     columnsArrangements, 
-    currRowsArrsIndex = 0, 
-    currGrid = {}, 
+    rowIndex = 0, 
+    colIndex = 0, 
+    currGrid = [], 
     columnsArrangementsIndexes = new Array(columnsArrangements.length).fill(0),
-    finalGrid = [false],
+    finalGrid = [false]
 ) {
 
     if (finalGrid[0]) return finalGrid[0];
 
-    for (currRowsArrsIndex; currRowsArrsIndex < rowsArrangementsSorted.length; currRowsArrsIndex++) {
+    for (let y = rowIndex; y < rowsArrangements.length; y++) {
 
-        const rowIndex = rowsArrangementsSorted[currRowsArrsIndex].y;
-        const rowArrangements = rowsArrangementsSorted[currRowsArrsIndex].arrangements;
+        for (const rowArrangement of rowsArrangements[y]) {
 
-        for (const rowArrangement of rowArrangements) {
-
-            //todo update this func
             const nextColumnsArrangementsIndexes = LoopThroughColumnsArrangementsUntilMatch(
                 columnsArrangements, 
                 rowArrangement, 
@@ -109,26 +105,24 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
 
             if (!nextColumnsArrangementsIndexes) continue;
 
-            const nextGrid = 
-            {
-                ...currGrid, 
-                [`${rowIndex}`]: rowArrangement
-            };
+            //append a reference to current rowArrangement to the current grid to build the solution step by step
+            const nextGrid = [...currGrid, rowArrangement];
 
             //if this was the last row, return the grid (ends the solve)
-            if (rowIndex === rowsArrangementsSorted.length - 1) {
+            if (rowIndex === rowArrangement.length - 1) {
                 finalGrid[0] = nextGrid;
 
                 return finalGrid[0];
             }
 
-             recursiveSolver(
-                rowsArrangementsSorted,
+            recursiveSolver(
+                rowsArrangements,
                 columnsArrangements, 
-                currRowsArrsIndex + 1, 
+                rowIndex + 1, 
+                colIndex, 
                 nextGrid,
                 nextColumnsArrangementsIndexes,
-                finalGrid,
+                finalGrid
             );
 
             if (finalGrid[0]) return finalGrid[0];
@@ -139,9 +133,10 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
 }
 
 //todo i could just store a map of true positions and check against that instead of storing the full grid
- function filterRowsAndColumnsAgainstEachother (
+//Todo clean this code
+function pruneRowsAndColumnsArrangements (
     rowsArrangements, 
-    columnsArrangements,
+    columnsArrangements
 ) {
 
     let grid = generateGrid(
@@ -179,6 +174,7 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
     }
 
     //prune rows
+
     for (const [y, rowArrangements] of rowsArrangements.entries()) {
         rowsArrangements[y] = rowArrangements.filter(function (rowArrangement) {
             for (let x = 0; x < rowArrangement.length; x++) {
@@ -188,13 +184,16 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
         });
     }
 
-    return [ rowsArrangements, columnsArrangements, grid ]
+    return [ rowsArrangements, columnsArrangements ]
 }
 
- function prune(
-    rowsArrangements,
-    columnsArrangements
+export function solveNonogram (
+    rows,
+    columns
 ) {
+
+    let rowsArrangements = rows.map(row => getArrangements(row, columns.length));
+    let columnsArrangements = columns.map(column => getArrangements(column, rows.length));
 
     let numOfRowsArrangements = rowsArrangements.reduce((acc, val) => acc += val.length, 0);
     let numOfColumnsArrangements = columnsArrangements.reduce((acc, val) => acc += val.length, 0);
@@ -209,50 +208,39 @@ function LoopThroughColumnsArrangementsUntilMatch(colsArrangements, rowArrangeme
         numOfRowsArrangements = numOfPrunedRowsArrangements;
         numOfColumnsArrangements = numOfPrunedColumnsArrangements;
 
-        let prunedRowsArrangement, prunedColumnsArrangements;
-        [prunedRowsArrangement, prunedColumnsArrangements] =  filterRowsAndColumnsAgainstEachother(
+        const [ prunedRowsArrangement, prunedColumnsArrangements ] = pruneRowsAndColumnsArrangements(
             rowsArrangements, 
             columnsArrangements
         );
 
         numOfPrunedRowsArrangements = prunedRowsArrangement.reduce((acc, val) => acc += val.length, 0);
         numOfPrunedColumnsArrangements = prunedColumnsArrangements.reduce((acc, val) => acc += val.length, 0);
+
         rowsArrangements = prunedRowsArrangement;
         columnsArrangements = prunedColumnsArrangements;
     }
 
-    return [rowsArrangements, columnsArrangements];
+    return recursiveSolver(rowsArrangements, columnsArrangements);
 }
 
-function sortBasedOnNumberOfElementsWhileSavingOriginalIndex(rowsArrangements) {
-    return rowsArrangements.map(function (rowArrangements, index) {
-        return {
-            y: index,
-            arrangements: rowArrangements
-        }
-    }).toSorted((a, b) => a.arrangements.length - b.arrangements.length);
-}
-
-export function solveNonogram (
-    rows,
-    columns
-) {
-
-    let rowsArrangements = rows.map(row => getArrangements(row, columns.length));
-    let columnsArrangements = columns.map(column => getArrangements(column, rows.length));
-
-    [rowsArrangements, columnsArrangements] = prune(
-        rowsArrangements, 
-        columnsArrangements
-    );
-
-    const rowsArrangementsSortedBasedOnNumberOfPermutations = sortBasedOnNumberOfElementsWhileSavingOriginalIndex(
-        rowsArrangements
-    );
-
-    return recursiveSolver(rowsArrangementsSortedBasedOnNumberOfPermutations, columnsArrangements);
-}
+// solveNonogram(
+//     [
+//         [ 1, 4, 1 ], [ 2, 4 ],      
+//         [ 2, 2, 2 ], [ 1, 1, 3 ],   
+//         [ 4 ],       [ 1, 1, 3 ],   
+//         [ 3, 1 ],    [ 2, 1, 1 ],   
+//         [ 1, 3, 1 ], [ 1, 3, 2 ]    
+//     ],
+//     [
+//         [ 2, 1, 3 ],    [ 3, 2 ],   
+//         [ 1, 1, 2 ],    [ 1, 1, 2 ],
+//         [ 1, 1, 1, 3 ], [ 1, 1, 1 ],
+//         [ 5 ],          [ 1, 3, 1 ],
+//         [ 6, 2 ],       [ 2, 2, 1 ] 
+//     ]
+// )
 
 
-//the idea for this one is to sort the column based on number of permutations and start to solve
-//from fewer perms rows to higher number of perms rows
+//the sub-problems are obviously the smaller grid...
+//start with the top-left 2x2
+//save all possible solution and progress further down-right
